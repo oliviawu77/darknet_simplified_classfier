@@ -8,7 +8,6 @@ extern "C" {
 #include "image.h"
 #include <stdint.h>
 
-void send_json(detection *dets, int nboxes, int classes, char **names, long long int frame_id, int port, int timeout);
 
 #ifdef OPENCV
 void send_mjpeg(mat_cv* mat, int port, int timeout, int quality);
