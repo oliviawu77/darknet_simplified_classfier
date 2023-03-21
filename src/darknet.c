@@ -8,9 +8,7 @@
 
 #include "parser.h"
 #include "utils.h"
-#include "dark_cuda.h"
 #include "blas.h"
-#include "connected_layer.h"
 
 
 extern void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top);

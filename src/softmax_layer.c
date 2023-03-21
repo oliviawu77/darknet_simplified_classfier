@@ -1,6 +1,5 @@
 #include "softmax_layer.h"
 #include "blas.h"
-#include "dark_cuda.h"
 #include "utils.h"
 #include "blas.h"
 

@@ -1,5 +1,4 @@
 #include "layer.h"
-#include "dark_cuda.h"
 #include <stdlib.h>
 
 void free_sublayer(layer *l)

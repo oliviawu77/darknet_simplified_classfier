@@ -12,7 +12,6 @@
 #include "convolutional_layer.h"
 #include "cost_layer.h"
 #include "list.h"
-#include "local_layer.h"
 #include "maxpool_layer.h"
 #include "normalization_layer.h"
 #include "option_list.h"
