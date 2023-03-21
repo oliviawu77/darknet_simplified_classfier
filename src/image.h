@@ -57,7 +57,6 @@ void saturate_exposure_image(image im, float sat, float exposure);
 void hsv_to_rgb(image im);
 //LIB_API void rgbgr_image(image im);
 void constrain_image(image im);
-void composite_3d(char *f1, char *f2, char *out, int delta);
 int best_3d_shift_r(image a, image b, int min, int max);
 
 image grayscale_image(image im);
@@ -98,7 +97,6 @@ float bilinear_interpolate(image im, float x, float y, int c);
 image get_image_layer(image m, int l);
 
 //LIB_API void free_image(image m);
-void test_resize(char *filename);
 #ifdef __cplusplus
 }
 #endif
