@@ -47,11 +47,7 @@ void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *fi
     char *input = buff;
     //int size = net.w;
     while(1){
-        printf("Enter Image Path: ");
-        fflush(stdout);
-        input = fgets(input, 256, stdin);
-        if(!input) break;
-        strtok(input, "\n");
+        strncpy(input, filename, 256);
         
         image im = load_image_color(input, 0, 0);
         image resized = resize_min(im, net.w);

@@ -449,7 +449,7 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
     node *n = sections->front;
     if(!n) error("Config file has no sections", DARKNET_LOC);
     network net = make_network(sections->size - 1);
-    net.gpu_index = gpu_index;
+    net.gpu_index = -1;
     size_params params;
 
     if (batch > 0) params.train = 0;    // allocates memory for Inference only
@@ -747,41 +747,10 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
     avg_outputs = avg_outputs / avg_counter;
     fprintf(stderr, "Total BFLOPS %5.3f \n", bflops);
     fprintf(stderr, "avg_outputs = %d \n", avg_outputs);
-#ifdef GPU
-    get_cuda_stream();
-    //get_cuda_memcpy_stream();
-    if (gpu_index >= 0)
-    {
-        int size = get_network_input_size(net) * net.batch;
-        net.input_state_gpu = cuda_make_array(0, size);
-        if (cudaSuccess == cudaHostAlloc(&net.input_pinned_cpu, size * sizeof(float), cudaHostRegisterMapped)) net.input_pinned_cpu_flag = 1;
-        else {
-            cudaGetLastError(); // reset CUDA-error
-            net.input_pinned_cpu = (float*)xcalloc(size, sizeof(float));
-        }
-
-        // pre-allocate memory for inference on Tensor Cores (fp16)
-        *net.max_input16_size = 0;
-        *net.max_output16_size = 0;
-        if (net.cudnn_half) {
-            *net.max_input16_size = max_inputs;
-            CHECK_CUDA(cudaMalloc((void **)net.input16_gpu, *net.max_input16_size * sizeof(short))); //sizeof(half)
-            *net.max_output16_size = max_outputs;
-            CHECK_CUDA(cudaMalloc((void **)net.output16_gpu, *net.max_output16_size * sizeof(short))); //sizeof(half)
-        }
-        if (workspace_size) {
-            fprintf(stderr, " Allocate additional workspace_size = %1.2f MB \n", (float)workspace_size/1000000);
-            net.workspace = cuda_make_array(0, workspace_size / sizeof(float) + 1);
-        }
-        else {
-            net.workspace = (float*)xcalloc(1, workspace_size);
-        }
+    if (workspace_size) {
+        net.workspace = (float*)xcalloc(1, workspace_size);
     }
-#else
-        if (workspace_size) {
-            net.workspace = (float*)xcalloc(1, workspace_size);
-        }
-#endif
+
 
     LAYER_TYPE lt = net.layers[net.n - 1].type;
     if ((net.w % 32 != 0 || net.h % 32 != 0) && (lt == YOLO || lt == REGION || lt == DETECTION)) {
@@ -828,9 +797,6 @@ list *read_cfg(char *filename)
     return sections;
 }
 
-}
-
-
 
 void load_batchnorm_weights(layer l, FILE *fp)
 {
@@ -845,6 +811,18 @@ void load_batchnorm_weights(layer l, FILE *fp)
 #endif
 }
 
+void transpose_matrix(float *a, int rows, int cols)
+{
+    float* transpose = (float*)xcalloc(rows * cols, sizeof(float));
+    int x, y;
+    for(x = 0; x < rows; ++x){
+        for(y = 0; y < cols; ++y){
+            transpose[y*rows + x] = a[x*cols + y];
+        }
+    }
+    memcpy(a, transpose, rows*cols*sizeof(float));
+    free(transpose);
+}
 
 void load_convolutional_weights(layer l, FILE *fp)
 {

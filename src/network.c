@@ -20,6 +20,12 @@
 #include "softmax_layer.h"
 #include "parser.h"
 
+int get_current_batch(network net)
+{
+    int batch_num = (*net.seen)/(net.batch*net.subdivisions);
+    return batch_num;
+}
+
 network make_network(int n)
 {
     network net = {0};
@@ -96,9 +102,6 @@ int recalculate_workspace_size(network *net)
         //printf(" %d: layer = %d,", i, l.type);
         if (l.type == CONVOLUTIONAL) {
             l.workspace_size = get_convolutional_workspace_size(l);
-        }
-        else if (l.type == CONNECTED) {
-            l.workspace_size = get_connected_workspace_size(l);
         }
         if (l.workspace_size > workspace_size) workspace_size = l.workspace_size;
         net->layers[i] = l;

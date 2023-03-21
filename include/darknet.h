@@ -664,20 +664,7 @@ struct layer {
     int *input_sizes_gpu;
     float **layers_output_gpu;
     float **layers_delta_gpu;
-#ifdef CUDNN
-    cudnnTensorDescriptor_t srcTensorDesc, dstTensorDesc;
-    cudnnTensorDescriptor_t srcTensorDesc16, dstTensorDesc16;
-    cudnnTensorDescriptor_t dsrcTensorDesc, ddstTensorDesc;
-    cudnnTensorDescriptor_t dsrcTensorDesc16, ddstTensorDesc16;
-    cudnnTensorDescriptor_t normTensorDesc, normDstTensorDesc, normDstTensorDescF16;
-    cudnnFilterDescriptor_t weightDesc, weightDesc16;
-    cudnnFilterDescriptor_t dweightDesc, dweightDesc16;
-    cudnnConvolutionDescriptor_t convDesc;
-    cudnnConvolutionFwdAlgo_t fw_algo, fw_algo16;
-    cudnnConvolutionBwdDataAlgo_t bd_algo, bd_algo16;
-    cudnnConvolutionBwdFilterAlgo_t bf_algo, bf_algo16;
-    cudnnPoolingDescriptor_t poolingDesc;
-#else   // CUDNN
+
     void* srcTensorDesc, *dstTensorDesc;
     void* srcTensorDesc16, *dstTensorDesc16;
     void* dsrcTensorDesc, *ddstTensorDesc;
@@ -690,8 +677,7 @@ struct layer {
     UNUSED_ENUM_TYPE bd_algo, bd_algo16;
     UNUSED_ENUM_TYPE bf_algo, bf_algo16;
     void* poolingDesc;
-#endif  // CUDNN
-//#endif  // GPU
+
 };
 
 
@@ -1016,13 +1002,8 @@ typedef struct box_label {
 
 
 // parser.c
-LIB_API network *load_network(char *cfg, char *weights, int clear);
-LIB_API network *load_network_custom(char *cfg, char *weights, int clear, int batch);
 LIB_API void free_network(network net);
-LIB_API void free_network_ptr(network* net);
 
-// network.c
-LIB_API load_args get_base_args(network *net);
 
 // box.h
 LIB_API void do_nms_sort(detection *dets, int total, int classes, float thresh);
@@ -1031,27 +1012,14 @@ LIB_API void diounms_sort(detection *dets, int total, int classes, float thresh,
 
 // network.h
 LIB_API float *network_predict(network net, float *input);
-LIB_API float *network_predict_ptr(network *net, float *input);
-LIB_API detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num, int letter);
-LIB_API det_num_pair* network_predict_batch(network *net, image im, int batch_size, int w, int h, float thresh, float hier, int *map, int relative, int letter);
-LIB_API void free_detections(detection *dets, int n);
-LIB_API void free_batch_detections(det_num_pair *det_num_pairs, int n);
 LIB_API void fuse_conv_batchnorm(network net);
 LIB_API void calculate_binary_weights(network net);
-LIB_API char *detection_to_json(detection *dets, int nboxes, int classes, char **names, long long int frame_id, char *filename);
 
-LIB_API layer* get_network_layer(network* net, int i);
 //LIB_API detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num, int letter);
-LIB_API detection *make_network_boxes(network *net, float thresh, int *num);
-LIB_API void reset_rnn(network *net);
-LIB_API float *network_predict_image(network *net, image im);
-LIB_API float *network_predict_image_letterbox(network *net, image im);
 LIB_API float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, float thresh_calc_avg_iou, const float iou_thresh, const int map_points, int letter_box, network *existing_net);
 LIB_API void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, int ngpus, int clear, int dont_show, int calc_map, float thresh, float iou_thresh, int mjpeg_port, int show_imgs, int benchmark_layers, char* chart_path);
 LIB_API void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh,
     float hier_thresh, int dont_show, int ext_output, int save_labels, char *outfile, int letter_box, int benchmark_layers);
-LIB_API int network_width(network *net);
-LIB_API int network_height(network *net);
 LIB_API void optimize_picture(network *net, image orig, int max_layer, float scale, float rate, float thresh, int norm);
 
 // image.h
@@ -1072,18 +1040,6 @@ LIB_API image resize_min(image im, int min);
 LIB_API void free_layer_custom(layer l, int keep_cudnn_desc);
 LIB_API void free_layer(layer l);
 
-// data.c
-LIB_API void free_data(data d);
-LIB_API pthread_t load_data(load_args args);
-LIB_API void free_load_threads(void *ptr);
-LIB_API pthread_t load_data_in_thread(load_args args);
-LIB_API void *load_thread(void *ptr);
-
-// dark_cuda.h
-LIB_API void cuda_pull_array(float *x_gpu, float *x, size_t n);
-LIB_API void cuda_pull_array_async(float *x_gpu, float *x, size_t n);
-LIB_API void cuda_set_device(int n);
-LIB_API void *cuda_get_context();
 
 // utils.h
 LIB_API void free_ptrs(void **ptrs, int n);

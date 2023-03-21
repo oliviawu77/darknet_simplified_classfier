@@ -3,10 +3,6 @@
 #include <stdlib.h>
 #include "darknet.h"
 
-#ifdef GPU
-#include "dark_cuda.h"
-#include "tree.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

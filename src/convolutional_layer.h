@@ -1,7 +1,6 @@
 #ifndef CONVOLUTIONAL_LAYER_H
 #define CONVOLUTIONAL_LAYER_H
 
-#include "dark_cuda.h"
 #include "image.h"
 #include "activations.h"
 #include "layer.h"

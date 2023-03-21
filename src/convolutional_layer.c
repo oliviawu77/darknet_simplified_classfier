@@ -104,37 +104,7 @@ image get_convolutional_delta(convolutional_layer l)
 }
 
 size_t get_workspace_size32(layer l){
-#ifdef CUDNN
-    if(gpu_index >= 0){
-        size_t most = 0;
-        size_t s = 0;
-        CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(cudnn_handle(),
-                l.srcTensorDesc,
-                l.weightDesc,
-                l.convDesc,
-                l.dstTensorDesc,
-                l.fw_algo,
-                &s));
-        if (s > most) most = s;
-        CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(cudnn_handle(),
-                l.srcTensorDesc,
-                l.ddstTensorDesc,
-                l.convDesc,
-                l.dweightDesc,
-                l.bf_algo,
-                &s));
-        if (s > most && l.train) most = s;
-        CHECK_CUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(cudnn_handle(),
-                l.weightDesc,
-                l.ddstTensorDesc,
-                l.convDesc,
-                l.dsrcTensorDesc,
-                l.bd_algo,
-                &s));
-        if (s > most && l.train) most = s;
-        return most;
-    }
-    #endif
+
     if (l.xnor) {
         size_t re_packed_input_size = l.c * l.w * l.h * sizeof(float);
         size_t workspace_size = (size_t)l.bit_align*l.size*l.size*l.c * sizeof(float);
@@ -1136,16 +1106,6 @@ void binary_align_weights(convolutional_layer *l)
         float_to_bit(align_weights, (unsigned char*)l->align_bit_weights, align_weights_size);
 
         //if (l->n >= 32)
-        if(gpu_index >= 0)
-        {
-            //int M = l->n;
-            //int N = l->out_w*l->out_h;
-            //printf("\n M = %d, N = %d, M %% 8 = %d, N %% 8 = %d - weights \n", M, N, M % 8, N % 8);
-            //printf("\n l.w = %d, l.c = %d, l.n = %d \n", l->w, l->c, l->n);
-            for (i = 0; i < align_weights_size / 8; ++i) l->align_bit_weights[i] = ~(l->align_bit_weights[i]);
-        }
-
-
 
         get_mean_array(l->binary_weights, m*k, l->n, l->mean_arr);
         //get_mean_array(l->binary_weights, m*new_lda, l->n, l->mean_arr);

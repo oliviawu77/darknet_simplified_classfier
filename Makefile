@@ -76,7 +76,7 @@ endif
 CPP=g++ -std=c++11 
 NVCC=nvcc
 OPTS=-Ofast
-LDFLAGS= -lm -pthread
+LDFLAGS= -lm
 COMMON= -Iinclude/ -I3rdparty/stb/include
 CFLAGS=-Wall -Wfatal-errors -Wno-unused-result -Wno-unknown-pragmas -fPIC -std=c99
 
@@ -151,7 +151,7 @@ LDFLAGS+= -L/usr/local/zed/lib -lsl_zed
 endif
 endif
 
-OBJ=image_opencv.o http_stream.o gemm.o utils.o dark_cuda.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o cost_layer.o parser.o option_list.o darknet.o box.o normalization_layer.o avgpool_layer.o layer.o classifier.o activation_layer.o batchnorm_layer.o tree.o 
+OBJ=image_opencv.o http_stream.o gemm.o utils.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o cost_layer.o parser.o option_list.o darknet.o box.o normalization_layer.o avgpool_layer.o layer.o classifier.o activation_layer.o batchnorm_layer.o tree.o 
 
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
