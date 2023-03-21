@@ -37,16 +37,6 @@ void set_batch_network(network *net, int b);
 int get_network_nuisance(network net);
 int get_network_background(network net);
 
-network combine_train_valid_networks(network net_train, network net_map);
-void copy_weights_net(network net_train, network *net_map);
-void free_network_recurrent_state(network net);
-void randomize_network_recurrent_state(network net);
-void remember_network_recurrent_state(network net);
-void restore_network_recurrent_state(network net);
-int is_ema_initialized(network net);
-void ema_update(network net, float ema_alpha);
-void ema_apply(network net);
-void reject_similar_weights(network net, float sim_threshold);
 
 
 #ifdef __cplusplus
