@@ -11,9 +11,6 @@
 #include "blas.h"
 
 #include "convolutional_layer.h"
-#include "activation_layer.h"
-#include "normalization_layer.h"
-#include "batchnorm_layer.h"
 #include "maxpool_layer.h"
 #include "avgpool_layer.h"
 #include "cost_layer.h"
@@ -91,10 +88,7 @@ float *get_network_output(network net)
 
 int recalculate_workspace_size(network *net)
 {
-#ifdef GPU
-    cuda_set_device(net->gpu_index);
-    if (gpu_index >= 0) cuda_free(net->workspace);
-#endif
+
     int i;
     size_t workspace_size = 0;
     for (i = 0; i < net->n; ++i) {
@@ -107,20 +101,9 @@ int recalculate_workspace_size(network *net)
         net->layers[i] = l;
     }
 
-#ifdef GPU
-    if (gpu_index >= 0) {
-        printf("\n try to allocate additional workspace_size = %1.2f MB \n", (float)workspace_size / 1000000);
-        net->workspace = cuda_make_array(0, workspace_size / sizeof(float) + 1);
-        printf(" CUDA allocate done! \n");
-    }
-    else {
-        free(net->workspace);
-        net->workspace = (float*)xcalloc(1, workspace_size);
-    }
-#else
+
     free(net->workspace);
     net->workspace = (float*)xcalloc(1, workspace_size);
-#endif
     //fprintf(stderr, " Done!\n");
     return 0;
 }
@@ -328,8 +311,6 @@ void fuse_conv_batchnorm(network net)
         }
     }
 }
-
-void forward_blank_layer(layer l, network_state state) {}
 
 void calculate_binary_weights(network net)
 {

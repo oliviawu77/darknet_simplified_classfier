@@ -3,17 +3,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "activation_layer.h"
 #include "activations.h"
 #include "assert.h"
 #include "avgpool_layer.h"
-#include "batchnorm_layer.h"
 #include "blas.h"
 #include "convolutional_layer.h"
 #include "cost_layer.h"
 #include "list.h"
 #include "maxpool_layer.h"
-#include "normalization_layer.h"
 #include "option_list.h"
 #include "parser.h"
 #include "softmax_layer.h"
@@ -30,19 +27,14 @@ list *read_cfg(char *filename);
 LAYER_TYPE string_to_layer_type(char * type)
 {
     if (strcmp(type, "[cost]")==0) return COST;
-    if (strcmp(type, "[local]")==0) return LOCAL;
     if (strcmp(type, "[conv]")==0
             || strcmp(type, "[convolutional]")==0) return CONVOLUTIONAL;
-    if (strcmp(type, "[activation]")==0) return ACTIVE;
     if (strcmp(type, "[net]")==0
             || strcmp(type, "[network]")==0) return NETWORK;
     if (strcmp(type, "[max]")==0
             || strcmp(type, "[maxpool]")==0) return MAXPOOL;
     if (strcmp(type, "[avg]")==0
             || strcmp(type, "[avgpool]")==0) return AVGPOOL;
-    if (strcmp(type, "[lrn]")==0
-            || strcmp(type, "[normalization]")==0) return NORMALIZATION;
-    if (strcmp(type, "[batchnorm]")==0) return BATCHNORM;
     if (strcmp(type, "[soft]")==0
             || strcmp(type, "[softmax]")==0) return SOFTMAX;
     return BLANK;
@@ -224,43 +216,6 @@ avgpool_layer parse_avgpool(list *options, size_params params)
     return layer;
 }
 
-
-layer parse_normalization(list *options, size_params params)
-{
-    float alpha = option_find_float(options, "alpha", .0001);
-    float beta =  option_find_float(options, "beta" , .75);
-    float kappa = option_find_float(options, "kappa", 1);
-    int size = option_find_int(options, "size", 5);
-    layer l = make_normalization_layer(params.batch, params.w, params.h, params.c, size, alpha, beta, kappa);
-    return l;
-}
-
-layer parse_batchnorm(list *options, size_params params)
-{
-    layer l = make_batchnorm_layer(params.batch, params.w, params.h, params.c, params.train);
-    return l;
-}
-
-
-
-layer parse_activation(list *options, size_params params)
-{
-    char *activation_s = option_find_str(options, "activation", "linear");
-    ACTIVATION activation = get_activation(activation_s);
-
-    layer l = make_activation_layer(params.batch, params.inputs, activation);
-
-    l.out_h = params.h;
-    l.out_w = params.w;
-    l.out_c = params.c;
-    l.h = params.h;
-    l.w = params.w;
-    l.c = params.c;
-
-    return l;
-}
-
-
 learning_rate_policy get_policy(char *s)
 {
     if (strcmp(s, "random")==0) return RANDOM;
@@ -366,18 +321,7 @@ void parse_net_options(list *options, network *net)
     char *policy_s = option_find_str(options, "policy", "constant");
     net->policy = get_policy(policy_s);
     net->burn_in = option_find_int_quiet(options, "burn_in", 0);
-#ifdef GPU
-    if (net->gpu_index >= 0) {
-        char device_name[1024];
-        int compute_capability = get_gpu_compute_capability(net->gpu_index, device_name);
-#ifdef CUDNN_HALF
-        if (compute_capability >= 700) net->cudnn_half = 1;
-        else net->cudnn_half = 0;
-#endif// CUDNN_HALF
-        fprintf(stderr, " %d : compute_capability = %d, cudnn_half = %d, GPU: %s \n", net->gpu_index, compute_capability, net->cudnn_half, device_name);
-    }
-    else fprintf(stderr, " GPU isn't used \n");
-#endif// GPU
+
     if(net->policy == STEP){
         net->step = option_find_int(options, "step", 1);
         net->scale = option_find_float(options, "scale", 1);
@@ -522,8 +466,6 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
         LAYER_TYPE lt = string_to_layer_type(s->type);
         if(lt == CONVOLUTIONAL){
             l = parse_convolutional(options, params);
-        }else if(lt == ACTIVE){
-            l = parse_activation(options, params);
         }else if(lt == COST){
             l = parse_cost(options, params);
             l.keep_delta_gpu = 1;
@@ -531,10 +473,6 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             l = parse_softmax(options, params);
             net.hierarchy = l.softmax_tree;
             l.keep_delta_gpu = 1;
-        }else if(lt == NORMALIZATION){
-            l = parse_normalization(options, params);
-        }else if(lt == BATCHNORM){
-            l = parse_batchnorm(options, params);
         }else if(lt == MAXPOOL){
             l = parse_maxpool(options, params);
         }else if(lt == AVGPOOL){
@@ -550,43 +488,19 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             int stride = max_val_cmp(1, l.stride);
             int size = max_val_cmp(1, l.size);
 
-            if (l.type == UPSAMPLE || (l.type == REORG))
-            {
+            int increase_receptive = size + (dilation - 1) * 2 - 1;// stride;
+            increase_receptive = max_val_cmp(0, increase_receptive);
 
-                l.receptive_w = receptive_w;
-                l.receptive_h = receptive_h;
-                l.receptive_w_scale = receptive_w_scale = receptive_w_scale / stride;
-                l.receptive_h_scale = receptive_h_scale = receptive_h_scale / stride;
+            receptive_w += increase_receptive * receptive_w_scale;
+            receptive_h += increase_receptive * receptive_h_scale;
+            receptive_w_scale *= stride;
+            receptive_h_scale *= stride;
 
-            }
-            else {
-                if (l.type == ROUTE) {
-                    receptive_w = receptive_h = receptive_w_scale = receptive_h_scale = 0;
-                    int k;
-                    for (k = 0; k < l.n; ++k) {
-                        layer route_l = net.layers[l.input_layers[k]];
-                        receptive_w = max_val_cmp(receptive_w, route_l.receptive_w);
-                        receptive_h = max_val_cmp(receptive_h, route_l.receptive_h);
-                        receptive_w_scale = max_val_cmp(receptive_w_scale, route_l.receptive_w_scale);
-                        receptive_h_scale = max_val_cmp(receptive_h_scale, route_l.receptive_h_scale);
-                    }
-                }
-                else
-                {
-                    int increase_receptive = size + (dilation - 1) * 2 - 1;// stride;
-                    increase_receptive = max_val_cmp(0, increase_receptive);
-
-                    receptive_w += increase_receptive * receptive_w_scale;
-                    receptive_h += increase_receptive * receptive_h_scale;
-                    receptive_w_scale *= stride;
-                    receptive_h_scale *= stride;
-                }
-
-                l.receptive_w = receptive_w;
-                l.receptive_h = receptive_h;
-                l.receptive_w_scale = receptive_w_scale;
-                l.receptive_h_scale = receptive_h_scale;
-            }
+            l.receptive_w = receptive_w;
+            l.receptive_h = receptive_h;
+            l.receptive_w_scale = receptive_w_scale;
+            l.receptive_h_scale = receptive_h_scale;
+        
             //printf(" size = %d, dilation = %d, stride = %d, receptive_w = %d, receptive_w_scale = %d - ", size, dilation, stride, receptive_w, receptive_w_scale);
 
             int cur_receptive_w = receptive_w;
@@ -595,45 +509,6 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             fprintf(stderr, "%4d - receptive field: %d x %d \n", count, cur_receptive_w, cur_receptive_h);
         }
 
-#ifdef GPU
-        // futher GPU-memory optimization: net.optimized_memory == 2
-        l.optimized_memory = net.optimized_memory;
-        if (net.optimized_memory == 1 && params.train && l.type != DROPOUT) {
-            if (l.delta_gpu) {
-                cuda_free(l.delta_gpu);
-                l.delta_gpu = NULL;
-            }
-        } else if (net.optimized_memory >= 2 && params.train && l.type != DROPOUT)
-        {
-            if (l.output_gpu) {
-                cuda_free(l.output_gpu);
-                //l.output_gpu = cuda_make_array_pinned(l.output, l.batch*l.outputs); // l.steps
-                l.output_gpu = cuda_make_array_pinned_preallocated(NULL, l.batch*l.outputs); // l.steps
-            }
-            if (l.activation_input_gpu) {
-                cuda_free(l.activation_input_gpu);
-                l.activation_input_gpu = cuda_make_array_pinned_preallocated(NULL, l.batch*l.outputs); // l.steps
-            }
-
-            if (l.x_gpu) {
-                cuda_free(l.x_gpu);
-                l.x_gpu = cuda_make_array_pinned_preallocated(NULL, l.batch*l.outputs); // l.steps
-            }
-
-            // maximum optimization
-            if (net.optimized_memory >= 3 && l.type != DROPOUT) {
-                if (l.delta_gpu) {
-                    cuda_free(l.delta_gpu);
-                    //l.delta_gpu = cuda_make_array_pinned_preallocated(NULL, l.batch*l.outputs); // l.steps
-                    //printf("\n\n PINNED DELTA GPU = %d \n", l.batch*l.outputs);
-                }
-            }
-
-            if (l.type == CONVOLUTIONAL) {
-                set_specified_workspace_limit(&l, net.workspace_size_limit);   // workspace size limit 1 GB
-            }
-        }
-#endif // GPU
 
         l.clip = option_find_float_quiet(options, "clip", 0);
         l.dynamic_minibatch = net.dynamic_minibatch;
@@ -686,11 +561,6 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
                 if (!l.delta) {
                     net.layers[k].delta = (float*)xcalloc(l.outputs*l.batch, sizeof(float));
                 }
-#ifdef GPU
-                if (!l.delta_gpu) {
-                    net.layers[k].delta_gpu = (float *)cuda_make_array(NULL, l.outputs*l.batch);
-                }
-#endif
             }
 
             net.layers[k].onlyforward = 1;
@@ -699,48 +569,6 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
     }
 
     free_list(sections);
-
-#ifdef GPU
-    if (net.optimized_memory && params.train)
-    {
-        int k;
-        for (k = 0; k < net.n; ++k) {
-            layer l = net.layers[k];
-            // delta GPU-memory optimization: net.optimized_memory == 1
-            if (!l.keep_delta_gpu) {
-                const size_t delta_size = l.outputs*l.batch; // l.steps
-                if (net.max_delta_gpu_size < delta_size) {
-                    net.max_delta_gpu_size = delta_size;
-                    if (net.global_delta_gpu) cuda_free(net.global_delta_gpu);
-                    if (net.state_delta_gpu) cuda_free(net.state_delta_gpu);
-                    assert(net.max_delta_gpu_size > 0);
-                    net.global_delta_gpu = (float *)cuda_make_array(NULL, net.max_delta_gpu_size);
-                    net.state_delta_gpu = (float *)cuda_make_array(NULL, net.max_delta_gpu_size);
-                }
-                if (l.delta_gpu) {
-                    if (net.optimized_memory >= 3) {}
-                    else cuda_free(l.delta_gpu);
-                }
-                l.delta_gpu = net.global_delta_gpu;
-            }
-            else {
-                if (!l.delta_gpu) l.delta_gpu = (float *)cuda_make_array(NULL, l.outputs*l.batch);
-            }
-
-            // maximum optimization
-            if (net.optimized_memory >= 3 && l.type != DROPOUT) {
-                if (l.delta_gpu && l.keep_delta_gpu) {
-                    //cuda_free(l.delta_gpu);   // already called above
-                    l.delta_gpu = cuda_make_array_pinned_preallocated(NULL, l.batch*l.outputs); // l.steps
-                    //printf("\n\n PINNED DELTA GPU = %d \n", l.batch*l.outputs);
-                }
-            }
-
-            net.layers[k] = l;
-        }
-    }
-#endif
-
 
     net.outputs = get_network_output_size(net);
     net.output = get_network_output(net);
@@ -797,19 +625,6 @@ list *read_cfg(char *filename)
     return sections;
 }
 
-
-void load_batchnorm_weights(layer l, FILE *fp)
-{
-    fread(l.biases, sizeof(float), l.c, fp);
-    fread(l.scales, sizeof(float), l.c, fp);
-    fread(l.rolling_mean, sizeof(float), l.c, fp);
-    fread(l.rolling_variance, sizeof(float), l.c, fp);
-#ifdef GPU
-    if(gpu_index >= 0){
-        push_batchnorm_layer(l);
-    }
-#endif
-}
 
 void transpose_matrix(float *a, int rows, int cols)
 {
@@ -915,9 +730,7 @@ void load_weights_upto(network *net, char *filename, int cutoff)
         if(l.type == CONVOLUTIONAL && l.share_layer == NULL){
             load_convolutional_weights(l, fp);
         }
-        if(l.type == BATCHNORM){
-            load_batchnorm_weights(l, fp);
-        }
+
         if (feof(fp)) break;
     }
     fprintf(stderr, "Done! Loaded %d layers from weights-file \n", i);

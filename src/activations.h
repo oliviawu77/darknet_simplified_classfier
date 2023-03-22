@@ -13,7 +13,6 @@ extern "C" {
 #endif
 ACTIVATION get_activation(char *s);
 
-char *get_activation_string(ACTIVATION a);
 float activate(float x, ACTIVATION a);
 float gradient(float x, ACTIVATION a);
 void gradient_array(const float *x, const int n, const ACTIVATION a, float *delta);
@@ -22,11 +21,7 @@ void gradient_array_mish(const int n, const float * activation_input, float * de
 void gradient_array_hard_mish(const int n, const float * activation_input, float * delta);
 void activate_array(float *x, const int n, const ACTIVATION a);
 void activate_array_swish(float *x, const int n, float * output_sigmoid, float * output);
-void activate_array_mish(float *x, const int n, float * activation_input, float * output);
-void activate_array_hard_mish(float *x, const int n, float * activation_input, float * output);
-void activate_array_normalize_channels(float *x, const int n, int batch, int channels, int wh_step, float *output);
 void gradient_array_normalize_channels(float *x, const int n, int batch, int channels, int wh_step, float *delta);
-void activate_array_normalize_channels_softmax(float *x, const int n, int batch, int channels, int wh_step, float *output, int use_max_val);
 void gradient_array_normalize_channels_softmax(float *x, const int n, int batch, int channels, int wh_step, float *delta);
 #ifdef GPU
 void activate_array_ongpu(float *x, int n, ACTIVATION a);
