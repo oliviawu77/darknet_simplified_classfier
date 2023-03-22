@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
-#include "pthread.h"
 
 #ifndef LIB_API
 #ifdef LIB_EXPORTS
@@ -1023,13 +1022,7 @@ LIB_API void test_detector(char *datacfg, char *cfgfile, char *weightfile, char 
 LIB_API void optimize_picture(network *net, image orig, int max_layer, float scale, float rate, float thresh, int norm);
 
 // image.h
-LIB_API void make_image_red(image im);
-LIB_API image make_attention_image(int img_size, float *original_delta_cpu, float *original_input_cpu, int w, int h, int c, float alpha);
 LIB_API image resize_image(image im, int w, int h);
-LIB_API void quantize_image(image im);
-LIB_API void copy_image_from_bytes(image im, char *pdata);
-LIB_API image letterbox_image(image im, int w, int h);
-LIB_API void rgbgr_image(image im);
 LIB_API image make_image(int w, int h, int c);
 LIB_API image load_image_color(char *filename, int w, int h);
 LIB_API void free_image(image m);
@@ -1042,7 +1035,6 @@ LIB_API void free_layer(layer l);
 
 
 // utils.h
-LIB_API void free_ptrs(void **ptrs, int n);
 LIB_API void top_k(float *a, int n, int k, int *index);
 
 // tree.h
@@ -1053,17 +1045,8 @@ LIB_API metadata get_metadata(char *file);
 
 
 // http_stream.h
-LIB_API void delete_json_sender();
-LIB_API void send_json_custom(char const* send_buf, int port, int timeout);
 LIB_API double get_time_point();
-void start_timer();
-void stop_timer();
-double get_time();
-void stop_timer_and_show();
-void stop_timer_and_show_name(char *name);
-void show_total_time();
 
-LIB_API void set_track_id(detection *new_dets, int new_dets_num, float thresh, float sim_thresh, float track_ciou_norm, int deque_size, int dets_for_track, int dets_for_show);
 LIB_API int fill_remaining_id(detection *new_dets, int new_dets_num, int new_track_id, float thresh);
 
 

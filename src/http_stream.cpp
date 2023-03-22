@@ -31,7 +31,6 @@ using std::endl;
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include "gettimeofday.h"
 #define PORT        unsigned long
 #define ADDRPOINTER   int*
 struct _INIT_W32DATA
