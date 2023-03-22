@@ -1,6 +1,5 @@
 #include "convolutional_layer.h"
 #include "utils.h"
-#include "im2col.h"
 #include "col2im.h"
 #include "blas.h"
 #include "gemm.h"

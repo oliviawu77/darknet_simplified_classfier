@@ -1,6 +1,5 @@
 #include "gemm.h"
 #include "utils.h"
-#include "im2col.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
