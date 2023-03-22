@@ -32,7 +32,7 @@ cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float sca
     l.cost = (float*)xcalloc(1, sizeof(float));
 
     l.forward = forward_cost_layer;
-
+    //remove backward layer
     return l;
 }
 

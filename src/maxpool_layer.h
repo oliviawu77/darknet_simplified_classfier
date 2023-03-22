@@ -12,7 +12,6 @@ extern "C" {
 #endif
 maxpool_layer make_maxpool_layer(int batch, int h, int w, int c, int size, int stride_x, int stride_y, int padding, int maxpool_depth, int out_channels, int antialiasing, int avgpool, int train);
 void forward_maxpool_layer(const maxpool_layer l, network_state state);
-void backward_maxpool_layer(const maxpool_layer l, network_state state);
 
 #ifdef __cplusplus
 }
