@@ -7,7 +7,6 @@
 #include "classifier.h"
 #ifdef WIN32
 #include <time.h>
-#include "gettimeofday.h"
 #else
 #include <sys/time.h>
 #endif
