@@ -8,9 +8,6 @@
 #include <string.h>
 #include <math.h>
 
-//#include "image_opencv.h"
-
-#include "box.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
