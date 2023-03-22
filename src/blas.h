@@ -12,22 +12,13 @@ void time_random_matrix(int TA, int TB, int m, int k, int n);
 
 void test_blas();
 
-void const_cpu(int N, float ALPHA, float *X, int INCX);
 void constrain_ongpu(int N, float ALPHA, float * X, int INCX);
 void constrain_min_max_ongpu(int N, float MIN, float MAX, float * X, int INCX);
-void pow_cpu(int N, float ALPHA, float *X, int INCX, float *Y, int INCY);
-void mul_cpu(int N, float *X, int INCX, float *Y, int INCY);
 
 void axpy_cpu(int N, float ALPHA, float *X, int INCX, float *Y, int INCY);
-void copy_cpu(int N, float *X, int INCX, float *Y, int INCY);
 void scal_cpu(int N, float ALPHA, float *X, int INCX);
-void scal_add_cpu(int N, float ALPHA, float BETA, float *X, int INCX);
 void fill_cpu(int N, float ALPHA, float * X, int INCX);
 void test_gpu_blas();
-
-void mean_cpu(float *x, int batch, int filters, int spatial, float *mean);
-void variance_cpu(float *x, float *mean, int batch, int filters, int spatial, float *variance);
-void normalize_cpu(float *x, float *mean, float *variance, int batch, int filters, int spatial);
 
 void add_bias(float *output, float *biases, int batch, int n, int size);
 void scale_bias(float *output, float *scales, int batch, int n, int size);
@@ -42,23 +33,6 @@ void l2_cpu(int n, float *pred, float *truth, float *delta, float *error);
 void softmax(float *input, int n, float temp, float *output, int stride);
 void softmax_cpu(float *input, int n, int batch, int batch_offset, int groups, int group_offset, int stride, float temp, float *output);
 void softmax_x_ent_cpu(int n, float *pred, float *truth, float *delta, float *error);
-
-
-int check_sim(size_t i, size_t j, contrastive_params *contrast_p, int contrast_p_size);
-float find_sim(size_t i, size_t j, contrastive_params *contrast_p, int contrast_p_size);
-float find_P_constrastive(size_t i, size_t j, contrastive_params *contrast_p, int contrast_p_size);
-float P_constrastive_f_det(size_t il, int *labels, float **z, unsigned int feature_size, float temperature, contrastive_params *contrast_p, int contrast_p_size);
-float P_constrastive_f(size_t i, size_t l, int *labels, float **z, unsigned int feature_size, float temperature, contrastive_params *contrast_p, int contrast_p_size);
-void grad_contrastive_loss_positive_f(size_t i, int *class_ids, int *labels, size_t num_of_samples, float **z, unsigned int feature_size, float temperature, float *delta, int wh, contrastive_params *contrast_p, int contrast_p_size);
-void grad_contrastive_loss_negative_f(size_t i, int *class_ids, int *labels, size_t num_of_samples, float **z, unsigned int feature_size, float temperature, float *delta, int wh, contrastive_params *contrast_p, int contrast_p_size, int neg_max);
-
-void get_embedding(float *src, int src_w, int src_h, int src_c, int embedding_size, int cur_w, int cur_h, int cur_n, int cur_b, float *dst);
-float math_vector_length(float *A, unsigned int feature_size);
-float cosine_similarity(float *A, float *B, unsigned int feature_size);
-float P_constrastive(size_t i, size_t l, int *labels, size_t num_of_samples, float **z, unsigned int feature_size, float temperature, float *cos_sim, float *exp_cos_sim);
-void grad_contrastive_loss_positive(size_t i, int *labels, size_t num_of_samples, float **z, unsigned int feature_size, float temperature, float *cos_sim, float *p_constrastive, float *delta, int wh);
-void grad_contrastive_loss_negative(size_t i, int *labels, size_t num_of_samples, float **z, unsigned int feature_size, float temperature, float *cos_sim, float *p_constrastive, float *delta, int wh);
-
 
 #ifdef GPU
 
