@@ -20,7 +20,7 @@ avgpool_layer make_avgpool_layer(int batch, int w, int h, int c)
     l.output = (float*)xcalloc(output_size, sizeof(float));
     l.delta = (float*)xcalloc(output_size, sizeof(float));
     l.forward = forward_avgpool_layer;
-    l.backward = backward_avgpool_layer;
+    //l.backward = backward_avgpool_layer;
 
     return l;
 }
@@ -42,17 +42,3 @@ void forward_avgpool_layer(const avgpool_layer l, network_state state)
     }
 }
 
-void backward_avgpool_layer(const avgpool_layer l, network_state state)
-{
-    int b,i,k;
-
-    for(b = 0; b < l.batch; ++b){
-        for(k = 0; k < l.c; ++k){
-            int out_index = k + b*l.c;
-            for(i = 0; i < l.h*l.w; ++i){
-                int in_index = i + l.h*l.w*(k + b*l.c);
-                state.delta[in_index] += l.delta[out_index] / (l.h*l.w);
-            }
-        }
-    }
-}
