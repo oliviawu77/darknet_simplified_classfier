@@ -300,46 +300,7 @@ convolutional_layer make_convolutional_layer(int batch, int steps, int h, int w,
     }
 
     fprintf(stderr, "%4d x%4d x%4d -> %4d x%4d x%4d %5.3f BF\n", w, h, c, l.out_w, l.out_h, l.out_c, l.bflops);
-
-
-    if (l.antialiasing) {
-        printf("AA:  ");
-        l.input_layer = (layer*)calloc(1, sizeof(layer));
-        int blur_size = 3;
-        int blur_pad = blur_size / 2;
-        if (l.antialiasing == 2) {
-            blur_size = 2;
-            blur_pad = 0;
-        }
-        *(l.input_layer) = make_convolutional_layer(batch, steps, out_h, out_w, n, n, n, blur_size, blur_stride_x, blur_stride_y, 1, blur_pad, LINEAR, 0, 0, 0, 0, 0, index, 0, NULL, 0, 0, train);
-        const int blur_nweights = n * blur_size * blur_size;  // (n / n) * n * blur_size * blur_size;
-        int i;
-        if (blur_size == 2) {
-            for (i = 0; i < blur_nweights; i += (blur_size*blur_size)) {
-                l.input_layer->weights[i + 0] = 1 / 4.f;
-                l.input_layer->weights[i + 1] = 1 / 4.f;
-                l.input_layer->weights[i + 2] = 1 / 4.f;
-                l.input_layer->weights[i + 3] = 1 / 4.f;
-            }
-        }
-        else {
-            for (i = 0; i < blur_nweights; i += (blur_size*blur_size)) {
-                l.input_layer->weights[i + 0] = 1 / 16.f;
-                l.input_layer->weights[i + 1] = 2 / 16.f;
-                l.input_layer->weights[i + 2] = 1 / 16.f;
-
-                l.input_layer->weights[i + 3] = 2 / 16.f;
-                l.input_layer->weights[i + 4] = 4 / 16.f;
-                l.input_layer->weights[i + 5] = 2 / 16.f;
-
-                l.input_layer->weights[i + 6] = 1 / 16.f;
-                l.input_layer->weights[i + 7] = 2 / 16.f;
-                l.input_layer->weights[i + 8] = 1 / 16.f;
-            }
-        }
-        for (i = 0; i < n; ++i) l.input_layer->biases[i] = 0;
-    }
-
+    //remove unused part
     return l;
 }
 
