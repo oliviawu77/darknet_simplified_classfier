@@ -3,7 +3,6 @@
 
 #include "darknet.h"
 #include "darknet.h"
-#include "matrix.h"
 #include "list.h"
 #include "image.h"
 #ifdef __cplusplus

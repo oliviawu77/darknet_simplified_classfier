@@ -14,7 +14,6 @@ void fill_cpu(int N, float ALPHA, float * X, int INCX);
 void test_gpu_blas();
 
 void add_bias(float *output, float *biases, int batch, int n, int size);
-void scale_bias(float *output, float *scales, int batch, int n, int size);
 void backward_scale_cpu(float *x_norm, float *delta, int batch, int n, int size, float *scale_updates);
 void mean_delta_cpu(float *delta, float *variance, int batch, int filters, int spatial, float *mean_delta);
 void  variance_delta_cpu(float *x, float *delta, float *mean, float *variance, int batch, int filters, int spatial, float *variance_delta);
