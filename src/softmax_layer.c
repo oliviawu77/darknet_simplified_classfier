@@ -27,15 +27,8 @@ softmax_layer make_softmax_layer(int batch, int inputs, int groups)
     l.cost = (float*)xcalloc(1, sizeof(float));
 
     l.forward = forward_softmax_layer;
-    l.backward = backward_softmax_layer;
-#ifdef GPU
-    l.forward_gpu = forward_softmax_layer_gpu;
-    l.backward_gpu = backward_softmax_layer_gpu;
+    //l.backward = backward_softmax_layer;
 
-    l.output_gpu = cuda_make_array(l.output, inputs*batch);
-    l.loss_gpu = cuda_make_array(l.loss, inputs*batch);
-    l.delta_gpu = cuda_make_array(l.delta, inputs*batch);
-#endif
     return l;
 }
 
@@ -57,10 +50,5 @@ void forward_softmax_layer(const softmax_layer l, network_state net)
         softmax_x_ent_cpu(l.batch*l.inputs, l.output, net.truth, l.delta, l.loss);
         l.cost[0] = sum_array(l.loss, l.batch*l.inputs);
     }
-}
-
-void backward_softmax_layer(const softmax_layer l, network_state net)
-{
-    axpy_cpu(l.inputs*l.batch, 1, l.delta, 1, net.delta, 1);
 }
 

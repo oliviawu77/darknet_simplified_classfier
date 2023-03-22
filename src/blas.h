@@ -8,7 +8,6 @@
 extern "C" {
 #endif
 
-void axpy_cpu(int N, float ALPHA, float *X, int INCX, float *Y, int INCY);
 void scal_cpu(int N, float ALPHA, float *X, int INCX);
 void fill_cpu(int N, float ALPHA, float * X, int INCX);
 void test_gpu_blas();

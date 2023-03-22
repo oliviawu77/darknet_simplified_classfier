@@ -32,7 +32,6 @@ cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float sca
     l.cost = (float*)xcalloc(1, sizeof(float));
 
     l.forward = forward_cost_layer;
-    l.backward = backward_cost_layer;
 
     return l;
 }
@@ -54,7 +53,3 @@ void forward_cost_layer(cost_layer l, network_state state)
     l.cost[0] = sum_array(l.output, l.batch*l.inputs);
 }
 
-void backward_cost_layer(const cost_layer l, network_state state)
-{
-    axpy_cpu(l.batch*l.inputs, l.scale, l.delta, 1, state.delta, 1);
-}
