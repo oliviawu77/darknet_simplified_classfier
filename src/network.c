@@ -38,15 +38,7 @@ network make_network(int n)
     net.total_bbox = (int*)xcalloc(1, sizeof(int));
     net.rewritten_bbox = (int*)xcalloc(1, sizeof(int));
     *net.rewritten_bbox = *net.total_bbox = 0;
-#ifdef GPU
-    net.input_gpu = (float**)xcalloc(1, sizeof(float*));
-    net.truth_gpu = (float**)xcalloc(1, sizeof(float*));
 
-    net.input16_gpu = (float**)xcalloc(1, sizeof(float*));
-    net.output16_gpu = (float**)xcalloc(1, sizeof(float*));
-    net.max_input16_size = (size_t*)xcalloc(1, sizeof(size_t));
-    net.max_output16_size = (size_t*)xcalloc(1, sizeof(size_t));
-#endif
     return net;
 }
 
@@ -60,17 +52,8 @@ void forward_network(network net, network_state state)
         if(l.delta && state.train && l.train){
             scal_cpu(l.outputs * l.batch, 0, l.delta, 1);
         }
-        //double time = get_time_point();
         l.forward(l, state);
-        //printf("%d - Predicted in %lf milli-seconds.\n", i, ((double)get_time_point() - time) / 1000);
         state.input = l.output;
-
-        /*
-        float avg_val = 0;
-        int k;
-        for (k = 0; k < l.outputs; ++k) avg_val += l.output[k];
-        printf(" i: %d - avg_val = %f \n", i, avg_val / l.outputs);
-        */
     }
 }
 
@@ -179,29 +162,8 @@ void free_network(network net)
     free(net.total_bbox);
     free(net.rewritten_bbox);
 
-#ifdef GPU
-    if (gpu_index >= 0) cuda_free(net.workspace);
-    else free(net.workspace);
-    free_pinned_memory();
-    if (net.input_state_gpu) cuda_free(net.input_state_gpu);
-    if (net.input_pinned_cpu) {   // CPU
-        if (net.input_pinned_cpu_flag) cudaFreeHost(net.input_pinned_cpu);
-        else free(net.input_pinned_cpu);
-    }
-    if (*net.input_gpu) cuda_free(*net.input_gpu);
-    if (*net.truth_gpu) cuda_free(*net.truth_gpu);
-    if (net.input_gpu) free(net.input_gpu);
-    if (net.truth_gpu) free(net.truth_gpu);
 
-    if (*net.input16_gpu) cuda_free(*net.input16_gpu);
-    if (*net.output16_gpu) cuda_free(*net.output16_gpu);
-    if (net.input16_gpu) free(net.input16_gpu);
-    if (net.output16_gpu) free(net.output16_gpu);
-    if (net.max_input16_size) free(net.max_input16_size);
-    if (net.max_output16_size) free(net.max_output16_size);
-#else
     free(net.workspace);
-#endif
 }
 
 static float lrelu(float src) {
@@ -242,67 +204,8 @@ void fuse_conv_batchnorm(network net)
 
                 free_convolutional_batchnorm(l);
                 l->batch_normalize = 0;
-#ifdef GPU
-                if (gpu_index >= 0) {
-                    push_convolutional_layer(*l);
-                }
-#endif
+
             }
-        }
-        else  if (l->type == SHORTCUT && l->weights && l->weights_normalization)
-        {
-            if (l->nweights > 0) {
-                //cuda_pull_array(l.weights_gpu, l.weights, l.nweights);
-                int i;
-                for (i = 0; i < l->nweights; ++i) printf(" w = %f,", l->weights[i]);
-                printf(" l->nweights = %d, j = %d \n", l->nweights, j);
-            }
-
-            // nweights - l.n or l.n*l.c or (l.n*l.c*l.h*l.w)
-            const int layer_step = l->nweights / (l->n + 1);    // 1 or l.c or (l.c * l.h * l.w)
-
-            int chan, i;
-            for (chan = 0; chan < layer_step; ++chan)
-            {
-                float sum = 1, max_val = -FLT_MAX;
-
-                if (l->weights_normalization == SOFTMAX_NORMALIZATION) {
-                    for (i = 0; i < (l->n + 1); ++i) {
-                        int w_index = chan + i * layer_step;
-                        float w = l->weights[w_index];
-                        if (max_val < w) max_val = w;
-                    }
-                }
-
-                const float eps = 0.0001;
-                sum = eps;
-
-                for (i = 0; i < (l->n + 1); ++i) {
-                    int w_index = chan + i * layer_step;
-                    float w = l->weights[w_index];
-                    if (l->weights_normalization == RELU_NORMALIZATION) sum += lrelu(w);
-                    else if (l->weights_normalization == SOFTMAX_NORMALIZATION) sum += expf(w - max_val);
-                }
-
-                for (i = 0; i < (l->n + 1); ++i) {
-                    int w_index = chan + i * layer_step;
-                    float w = l->weights[w_index];
-                    if (l->weights_normalization == RELU_NORMALIZATION) w = lrelu(w) / sum;
-                    else if (l->weights_normalization == SOFTMAX_NORMALIZATION) w = expf(w - max_val) / sum;
-                    l->weights[w_index] = w;
-                }
-            }
-
-            l->weights_normalization = NO_NORMALIZATION;
-
-#ifdef GPU
-            if (gpu_index >= 0) {
-                push_shortcut_layer(*l);
-            }
-#endif
-        }
-        else {
-            //printf(" Fusion skip layer type: %d \n", l->type);
         }
     }
 }
@@ -327,24 +230,10 @@ void calculate_binary_weights(network net)
                     l->activation = LINEAR;
                 }
 
-#ifdef GPU
-                // fuse conv_xnor + shortcut -> conv_xnor
-                if ((j + 1) < net.n && net.layers[j].type == CONVOLUTIONAL) {
-                    layer *sc = &net.layers[j + 1];
-                    if (sc->type == SHORTCUT && sc->w == sc->out_w && sc->h == sc->out_h && sc->c == sc->out_c)
-                    {
-                        l->bin_conv_shortcut_in_gpu = net.layers[net.layers[j + 1].index].output_gpu;
-                        l->bin_conv_shortcut_out_gpu = net.layers[j + 1].output_gpu;
 
-                        net.layers[j + 1].type = BLANK;
-                        net.layers[j + 1].forward_gpu = forward_blank_layer;
-                    }
-                }
-#endif  // GPU
             }
         }
     }
-    //printf("\n calculate_binary_weights Done! \n");
 
 }
 
