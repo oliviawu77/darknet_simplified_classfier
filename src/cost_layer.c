@@ -39,17 +39,11 @@ cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float sca
 void forward_cost_layer(cost_layer l, network_state state)
 {
     if (!state.truth) return;
-    if(l.cost_type == MASKED){
-        int i;
-        for(i = 0; i < l.batch*l.inputs; ++i){
-            if(state.truth[i] == SECRET_NUM) state.input[i] = SECRET_NUM;
-        }
-    }
-    if(l.cost_type == SMOOTH){
-        smooth_l1_cpu(l.batch*l.inputs, state.input, state.truth, l.delta, l.output);
-    } else {
-        l2_cpu(l.batch*l.inputs, state.input, state.truth, l.delta, l.output);
-    }
+    
+    //remove unused part
+
+    l2_cpu(l.batch*l.inputs, state.input, state.truth, l.delta, l.output);
+
     l.cost[0] = sum_array(l.output, l.batch*l.inputs);
 }
 
