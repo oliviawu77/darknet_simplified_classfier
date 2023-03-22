@@ -7,7 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void pm(int M, int N, float *A);
 float *random_matrix(int rows, int cols);
 void time_random_matrix(int TA, int TB, int m, int k, int n);
 

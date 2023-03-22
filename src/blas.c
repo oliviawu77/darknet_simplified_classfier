@@ -8,11 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static float relu(float src) {
-    if (src > 0) return src;
-    return 0;
-}
-
 void mean_cpu(float *x, int batch, int filters, int spatial, float *mean)
 {
     float scale = 1./(batch * spatial);

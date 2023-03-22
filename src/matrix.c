@@ -115,34 +115,6 @@ float *pop_column(matrix *m, int c)
     return col;
 }
 
-matrix csv_to_matrix(char *filename)
-{
-    FILE *fp = fopen(filename, "r");
-    if(!fp) file_error(filename);
-
-    matrix m;
-    m.cols = -1;
-
-    char *line;
-
-    int n = 0;
-    int size = 1024;
-    m.vals = (float**)xcalloc(size, sizeof(float*));
-    while((line = fgetl(fp))){
-        if(m.cols == -1) m.cols = count_fields(line);
-        if(n == size){
-            size *= 2;
-            m.vals = (float**)xrealloc(m.vals, size * sizeof(float*));
-        }
-        m.vals[n] = parse_fields(line, m.cols);
-        free(line);
-        ++n;
-    }
-    m.vals = (float**)xrealloc(m.vals, n * sizeof(float*));
-    m.rows = n;
-    return m;
-}
-
 void matrix_to_csv(matrix m)
 {
     int i, j;
