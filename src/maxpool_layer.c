@@ -53,7 +53,7 @@ maxpool_layer make_maxpool_layer(int batch, int h, int w, int c, int size, int s
     //remove avgpool
 
     l.forward = forward_maxpool_layer;
-    l.backward = backward_maxpool_layer;
+    //l.backward = backward_maxpool_layer;
     
 
 	l.bflops = (l.size*l.size*l.c * l.out_h*l.out_w) / 1000000000.;

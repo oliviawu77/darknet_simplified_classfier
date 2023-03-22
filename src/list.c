@@ -13,32 +13,6 @@ list *make_list()
     return l;
 }
 
-/*
-void transfer_node(list *s, list *d, node *n)
-{
-    node *prev, *next;
-    prev = n->prev;
-    next = n->next;
-    if(prev) prev->next = next;
-    if(next) next->prev = prev;
-    --s->size;
-    if(s->front == n) s->front = next;
-    if(s->back == n) s->back = prev;
-}
-*/
-
-void *list_pop(list *l){
-    if(!l->back) return 0;
-    node *b = l->back;
-    void *val = b->val;
-    l->back = b->prev;
-    if(l->back) l->back->next = 0;
-    free(b);
-    --l->size;
-
-    return val;
-}
-
 void list_insert(list *l, void *val)
 {
     node* newnode = (node*)xmalloc(sizeof(node));
@@ -66,30 +40,10 @@ void free_node(node *n)
     }
 }
 
-void free_list_val(list *l)
-{
-    node *n = l->front;
-    node *next;
-    while (n) {
-        next = n->next;
-        free(n->val);
-        n = next;
-    }
-}
-
 void free_list(list *l)
 {
     free_node(l->front);
     free(l);
-}
-
-void free_list_contents(list *l)
-{
-    node *n = l->front;
-    while(n){
-        free(n->val);
-        n = n->next;
-    }
 }
 
 void free_list_contents_kvp(list *l)
