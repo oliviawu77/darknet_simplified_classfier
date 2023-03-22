@@ -194,37 +194,10 @@ convolutional_layer make_convolutional_layer(int batch, int steps, int h, int w,
     l.activation = activation;
 
     l.output = (float*)xcalloc(total_batch*l.outputs, sizeof(float));
-#ifndef GPU
-    if (train) l.delta = (float*)xcalloc(total_batch*l.outputs, sizeof(float));
-#endif  // not GPU
 
     l.forward = forward_convolutional_layer;
     //remove backward layer and update layer
-    if(binary){
-        l.binary_weights = (float*)xcalloc(l.nweights, sizeof(float));
-        l.cweights = (char*)xcalloc(l.nweights, sizeof(char));
-        l.scales = (float*)xcalloc(n, sizeof(float));
-    }
-    if(xnor){
-        l.binary_weights = (float*)xcalloc(l.nweights, sizeof(float));
-        l.binary_input = (float*)xcalloc(l.inputs * l.batch, sizeof(float));
-
-        int align = 32;// 8;
-        int src_align = l.out_h*l.out_w;
-        l.bit_align = src_align + (align - src_align % align);
-
-        l.mean_arr = (float*)xcalloc(l.n, sizeof(float));
-
-        const size_t new_c = l.c / 32;
-        size_t in_re_packed_input_size = new_c * l.w * l.h + 1;
-        l.bin_re_packed_input = (uint32_t*)xcalloc(in_re_packed_input_size, sizeof(uint32_t));
-
-        l.lda_align = 256;  // AVX2
-        int k = l.size*l.size*l.c;
-        size_t k_aligned = k + (l.lda_align - k%l.lda_align);
-        size_t t_bit_input_size = k_aligned * l.bit_align / 8;
-        l.t_bit_input = (char*)xcalloc(t_bit_input_size, sizeof(char));
-    }
+    //remove binary and xnor condition
 
     if(batch_normalize){
         if (l.share_layer) {
@@ -242,43 +215,15 @@ convolutional_layer make_convolutional_layer(int batch, int steps, int h, int w,
             for (i = 0; i < n; ++i) {
                 l.scales[i] = 1;
             }
-            if (train) {
-                l.scales_ema = (float*)xcalloc(n, sizeof(float));
-                l.scale_updates = (float*)xcalloc(n, sizeof(float));
-
-                l.mean = (float*)xcalloc(n, sizeof(float));
-                l.variance = (float*)xcalloc(n, sizeof(float));
-
-                l.mean_delta = (float*)xcalloc(n, sizeof(float));
-                l.variance_delta = (float*)xcalloc(n, sizeof(float));
-            }
+            //remove unused part
             l.rolling_mean = (float*)xcalloc(n, sizeof(float));
             l.rolling_variance = (float*)xcalloc(n, sizeof(float));
         }
 
-#ifndef GPU
-        if (train) {
-            l.x = (float*)xcalloc(total_batch * l.outputs, sizeof(float));
-            l.x_norm = (float*)xcalloc(total_batch * l.outputs, sizeof(float));
-        }
-#endif  // not GPU
-    }
-
-#ifndef GPU
-    if (l.activation == SWISH || l.activation == MISH || l.activation == HARD_MISH) l.activation_input = (float*)calloc(total_batch*l.outputs, sizeof(float));
-#endif  // not GPU
-
-    if(adam){
-        l.adam = 1;
-        l.m = (float*)xcalloc(l.nweights, sizeof(float));
-        l.v = (float*)xcalloc(l.nweights, sizeof(float));
-        l.bias_m = (float*)xcalloc(n, sizeof(float));
-        l.scale_m = (float*)xcalloc(n, sizeof(float));
-        l.bias_v = (float*)xcalloc(n, sizeof(float));
-        l.scale_v = (float*)xcalloc(n, sizeof(float));
     }
 
 
+    //remove unused part
     l.workspace_size = get_convolutional_workspace_size(l);
 
     //fprintf(stderr, "conv  %5d %2d x%2d /%2d  %4d x%4d x%4d   ->  %4d x%4d x%4d\n", n, size, size, stride, w, h, c, l.out_w, l.out_h, l.out_c);
