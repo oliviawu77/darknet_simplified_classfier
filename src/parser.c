@@ -15,7 +15,6 @@
 #include "parser.h"
 #include "softmax_layer.h"
 #include "utils.h"
-#include "version.h"
 
 typedef struct{
     char *type;
