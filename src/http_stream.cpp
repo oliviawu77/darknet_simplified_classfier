@@ -22,33 +22,11 @@ using std::endl;
 //
 // socket related abstractions:
 //
-#ifdef _WIN32
-#ifndef USE_CMAKE_LIBS
-#pragma comment(lib, "ws2_32.lib")
-#endif
-#define WIN32_LEAN_AND_MEAN
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#define PORT        unsigned long
-#define ADDRPOINTER   int*
-struct _INIT_W32DATA
-{
-    WSADATA w;
-    _INIT_W32DATA() { WSAStartup(MAKEWORD(2, 1), &w); }
-} _init_once;
 
-
-#else   // _WIN32 - else: nix
 #include "darkunistd.h"
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <signal.h>
 #define PORT        unsigned short
 #define SOCKET    int
@@ -62,29 +40,6 @@ struct _INIT_W32DATA
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR   -1
 #endif
-struct _IGNORE_PIPE_SIGNAL
-{
-    struct sigaction new_actn, old_actn;
-    _IGNORE_PIPE_SIGNAL() {
-        new_actn.sa_handler = SIG_IGN;  // ignore the broken pipe signal
-        sigemptyset(&new_actn.sa_mask);
-        new_actn.sa_flags = 0;
-        sigaction(SIGPIPE, &new_actn, &old_actn);
-        // sigaction (SIGPIPE, &old_actn, NULL); // - to restore the previous signal handling
-    }
-} _init_once;
-
-static int close_socket(SOCKET s) {
-    int close_output = ::shutdown(s, 1); // 0 close input, 1 close output, 2 close both
-    char *buf = (char *)calloc(1024, sizeof(char));
-    ::recv(s, buf, 1024, 0);
-    free(buf);
-    int close_input = ::shutdown(s, 0);
-    int result = close(s);
-    std::cerr << "Close socket: out = " << close_output << ", in = " << close_input << " \n";
-    return result;
-}
-#endif // _WIN32
 
 // ----------------------------------------
 
