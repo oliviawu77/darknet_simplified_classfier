@@ -12,7 +12,6 @@
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
-#include "darkunistd.h"
 #ifdef WIN32
 #include "gettimeofday.h"
 #else
