@@ -4,23 +4,6 @@
 #include "utils.h"
 #include "data.h"
 
-
-void hierarchy_predictions(float *predictions, int n, tree *hier, int only_leaves)
-{
-    int j;
-    for(j = 0; j < n; ++j){
-        int parent = hier->parent[j];
-        if(parent >= 0){
-            predictions[j] *= predictions[parent];
-        }
-    }
-    if(only_leaves){
-        for(j = 0; j < n; ++j){
-            if(!hier->leaf[j]) predictions[j] = 0;
-        }
-    }
-}
-
 tree *read_tree(char *filename)
 {
     tree t = {0};
