@@ -1030,9 +1030,6 @@ LIB_API void free_layer(layer l);
 // utils.h
 LIB_API void top_k(float *a, int n, int k, int *index);
 
-// tree.h
-LIB_API tree *read_tree(char *filename);
-
 // option_list.h
 LIB_API metadata get_metadata(char *file);
 

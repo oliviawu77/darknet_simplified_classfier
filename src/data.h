@@ -8,7 +8,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "tree.h"
 
 list *get_paths(char *filename);
 char **get_labels(char *filename);

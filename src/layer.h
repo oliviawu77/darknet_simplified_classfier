@@ -3,7 +3,6 @@
 
 #include "activations.h"
 #include "stddef.h"
-#include "tree.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

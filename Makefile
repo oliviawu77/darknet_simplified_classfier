@@ -151,7 +151,7 @@ LDFLAGS+= -L/usr/local/zed/lib -lsl_zed
 endif
 endif
 
-OBJ= http_stream.o gemm.o utils.o convolutional_layer.o list.o image.o activations.o im2col.o blas.o maxpool_layer.o softmax_layer.o data.o network.o cost_layer.o parser.o option_list.o darknet.o avgpool_layer.o layer.o classifier.o tree.o 
+OBJ= http_stream.o gemm.o utils.o convolutional_layer.o list.o image.o activations.o im2col.o blas.o maxpool_layer.o softmax_layer.o data.o network.o cost_layer.o parser.o option_list.o darknet.o avgpool_layer.o layer.o classifier.o
 
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h

@@ -158,7 +158,7 @@ softmax_layer parse_softmax(list *options, size_params params)
 	softmax_layer layer = make_softmax_layer(params.batch, params.inputs, groups);
 	layer.temperature = option_find_float_quiet(options, "temperature", 1);
 	char *tree_file = option_find_str(options, "tree", 0);
-	if (tree_file) layer.softmax_tree = read_tree(tree_file);
+    //remove read_tree
 	layer.w = params.w;
 	layer.h = params.h;
 	layer.c = params.c;
