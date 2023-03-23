@@ -59,9 +59,6 @@ void forward_network(network net, network_state state)
 
 float *get_network_output(network net)
 {
-#ifdef GPU
-    if (gpu_index >= 0) return get_network_output_gpu(net);
-#endif
     int i;
     for(i = net.n-1; i > 0; --i) if(net.layers[i].type != COST) break;
     return net.layers[i].output;
@@ -97,16 +94,6 @@ void set_batch_network(network *net, int b)
     int i;
     for(i = 0; i < net->n; ++i){
         net->layers[i].batch = b;
-
-#ifdef CUDNN
-        if(net->layers[i].type == CONVOLUTIONAL){
-            cudnn_convolutional_setup(net->layers + i, cudnn_fastest, 0);
-        }
-        else if (net->layers[i].type == MAXPOOL) {
-            cudnn_maxpool_setup(net->layers + i);
-        }
-#endif
-
     }
     recalculate_workspace_size(net); // recalculate workspace size
 }
@@ -123,10 +110,6 @@ int get_network_output_size(network net)
 
 float *network_predict(network net, float *input)
 {
-#ifdef GPU
-    if(gpu_index >= 0)  return network_predict_gpu(net, input);
-#endif
-
     network_state state = {0};
     state.net = net;
     state.index = 0;
@@ -166,12 +149,6 @@ void free_network(network net)
     free(net.workspace);
 }
 
-static float lrelu(float src) {
-    const float eps = 0.001;
-    if (src > eps) return src;
-    return eps;
-}
-
 void fuse_conv_batchnorm(network net)
 {
     int j;
@@ -179,8 +156,6 @@ void fuse_conv_batchnorm(network net)
         layer *l = &net.layers[j];
 
         if (l->type == CONVOLUTIONAL) {
-            //printf(" Merges Convolutional-%d and batch_norm \n", j);
-
             if (l->share_layer != NULL) {
                 l->batch_normalize = 0;
             }
@@ -201,7 +176,6 @@ void fuse_conv_batchnorm(network net)
                         l->weights[w_index] *= precomputed;
                     }
                 }
-
                 free_convolutional_batchnorm(l);
                 l->batch_normalize = 0;
 
@@ -210,32 +184,6 @@ void fuse_conv_batchnorm(network net)
     }
 }
 
-void calculate_binary_weights(network net)
-{
-    int j;
-    for (j = 0; j < net.n; ++j) {
-        layer *l = &net.layers[j];
-
-        if (l->type == CONVOLUTIONAL) {
-            //printf(" Merges Convolutional-%d and batch_norm \n", j);
-
-            if (l->xnor) {
-                //printf("\n %d \n", j);
-                //l->lda_align = 256; // 256bit for AVX2    // set in make_convolutional_layer()
-                //if (l->size*l->size*l->c >= 2048) l->lda_align = 512;
-
-                binary_align_weights(l);
-
-                if (net.layers[j].use_bin_output) {
-                    l->activation = LINEAR;
-                }
-
-
-            }
-        }
-    }
-
-}
 
 
 

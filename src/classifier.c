@@ -21,7 +21,7 @@ void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *fi
     srand(2222222);
 
     fuse_conv_batchnorm(net);
-    calculate_binary_weights(net);
+    //calculate_binary_weights(net);
 
     list *options = read_data_cfg(datacfg);
 

@@ -1006,7 +1006,6 @@ LIB_API void free_network(network net);
 // network.h
 LIB_API float *network_predict(network net, float *input);
 LIB_API void fuse_conv_batchnorm(network net);
-LIB_API void calculate_binary_weights(network net);
 
 //LIB_API detection *get_network_boxes(network *net, int w, int h, float thresh, float hier, int *map, int relative, int *num, int letter);
 LIB_API float validate_detector_map(char *datacfg, char *cfgfile, char *weightfile, float thresh_calc_avg_iou, const float iou_thresh, const int map_points, int letter_box, network *existing_net);
