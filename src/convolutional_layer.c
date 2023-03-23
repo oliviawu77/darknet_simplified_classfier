@@ -16,47 +16,6 @@
 #define PUT_IN_REGISTER register
 #endif
 
-#ifndef AI2
-#define AI2 0
-void forward_xnor_layer(layer l, network_state state);
-#endif
-
-void swap_binary(convolutional_layer *l)
-{
-    float *swap = l->weights;
-    l->weights = l->binary_weights;
-    l->binary_weights = swap;
-
-    #ifdef GPU
-    swap = l->weights_gpu;
-    l->weights_gpu = l->binary_weights_gpu;
-    l->binary_weights_gpu = swap;
-    #endif
-}
-
-void binarize_weights(float *weights, int n, int size, float *binary)
-{
-    int i, f;
-    for(f = 0; f < n; ++f){
-        float mean = 0;
-        for(i = 0; i < size; ++i){
-            mean += fabs(weights[f*size + i]);
-        }
-        mean = mean / size;
-        for(i = 0; i < size; ++i){
-            binary[f*size + i] = (weights[f*size + i] > 0) ? mean: -mean;
-        }
-    }
-}
-
-void binarize_cpu(float *input, int n, float *binary)
-{
-    int i;
-    for(i = 0; i < n; ++i){
-        binary[i] = (input[i] > 0) ? 1 : -1;
-    }
-}
-
 int convolutional_out_height(convolutional_layer l)
 {
     return (l.h + 2*l.pad - l.size) / l.stride_y + 1;
@@ -269,81 +228,6 @@ void get_mean_array(float *src, size_t size, size_t filters, float *mean_arr) {
     }
 }
 
-void binary_align_weights(convolutional_layer *l)
-{
-    int m = l->n;   // (l->n / l->groups)
-    int k = l->size*l->size*l->c;   // ->size*l->size*(l->c / l->groups)
-    size_t new_lda = k + (l->lda_align - k % l->lda_align); // (k / 8 + 1) * 8;
-    l->new_lda = new_lda;
-
-    binarize_weights(l->weights, m, k, l->binary_weights);
-
-    size_t align_weights_size = new_lda * m;
-    l->align_bit_weights_size = align_weights_size / 8 + 1;
-    float* align_weights = (float*)xcalloc(align_weights_size, sizeof(float));
-    l->align_bit_weights = (char*)xcalloc(l->align_bit_weights_size, sizeof(char));
-
-    size_t i, j;
-    // align A without transpose
-    for (i = 0; i < m; ++i) {
-        for (j = 0; j < k; ++j) {
-            align_weights[i*new_lda + j] = l->binary_weights[i*k + j];
-        }
-    }
-
-
-    if (l->c % 32 == 0)
-    //if(gpu_index < 0 && l->stride == 1 && l->pad == 1 && l->c % 32 == 0)
-    //if (l->stride == 1 && l->pad == 1 && l->c % 32 == 0)
-    {
-        int fil, chan;
-        const int items_per_filter = l->c * l->size * l->size;
-        //const int dst_items_per_filter = new_lda;
-        for (fil = 0; fil < l->n; ++fil)
-        {
-            for (chan = 0; chan < l->c; chan += 32)
-            {
-                const int items_per_channel = l->size*l->size;
-                for (i = 0; i < items_per_channel; ++i)
-                {
-                    //uint32_t val = 0;
-                    int c_pack;
-                    for (c_pack = 0; c_pack < 32; ++c_pack) {
-                        float src = l->binary_weights[fil*items_per_filter + (chan + c_pack)*items_per_channel + i];
-
-                        //align_weights[fil*items_per_filter + chan*items_per_channel + i * 32 + c_pack] = src;
-
-                        align_weights[fil*new_lda + chan*items_per_channel + i*32 + c_pack] = src;
-                        //val |= (src << c);
-                    }
-
-                }
-            }
-        }
-
-        //printf("\n l.index = %d \t aw[0] = %f, aw[1] = %f, aw[2] = %f, aw[3] = %f \n", l->index, align_weights[0], align_weights[1], align_weights[2], align_weights[3]);
-        //memcpy(l->binary_weights, align_weights, (l->size * l->size * l->c * l->n) * sizeof(float));
-
-        float_to_bit(align_weights, (unsigned char*)l->align_bit_weights, align_weights_size);
-
-        //if (l->n >= 32)
-
-        get_mean_array(l->binary_weights, m*k, l->n, l->mean_arr);
-        //get_mean_array(l->binary_weights, m*new_lda, l->n, l->mean_arr);
-    }
-    else {
-        float_to_bit(align_weights, (unsigned char*)l->align_bit_weights, align_weights_size);
-
-        get_mean_array(l->binary_weights, m*k, l->n, l->mean_arr);
-    }
-
-    //l->mean_arr = calloc(l->n, sizeof(float));
-
-    //get_mean_array(align_weights, align_weights_size, l->n, l->mean_arr);
-
-    free(align_weights);
-}
-
 //copy from https://github.com/AlexeyAB/darknet/blob/bc810016a1f2eadf33a1ac800b64962a42f3d402/src/convolutional_layer.c
 void forward_convolutional_layer(convolutional_layer l, network_state state)
 {
@@ -353,12 +237,7 @@ void forward_convolutional_layer(convolutional_layer l, network_state state)
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
 
-    if(l.xnor){
-        binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
-        swap_binary(&l);
-        binarize_cpu(state.input, l.c*l.h*l.w*l.batch, l.binary_input);
-        state.input = l.binary_input;
-    }
+    //remove xnor
 
     int m = l.n;
     int k = l.size*l.size*l.c;
@@ -381,6 +260,5 @@ void forward_convolutional_layer(convolutional_layer l, network_state state)
     add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
 
     activate_array(l.output, m*n*l.batch, l.activation);
-    if(l.binary || l.xnor) swap_binary(&l);
 }
 
