@@ -27,18 +27,6 @@ void fill_cpu(int N, float ALPHA, float *X, int INCX)
     }
 }
 
-void softmax_x_ent_cpu(int n, float *pred, float *truth, float *delta, float *error)
-{
-    int i;
-    for(i = 0; i < n; ++i){
-        float t = truth[i];
-        float p = pred[i];
-        error[i] = (t) ? -log(p) : 0;
-        delta[i] = t-p;
-    }
-}
-
-
 void l2_cpu(int n, float *pred, float *truth, float *delta, float *error)
 {
     int i;
