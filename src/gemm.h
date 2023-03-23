@@ -11,8 +11,6 @@ extern "C" {
 int is_avx();
 int is_fma_avx2();
 
-void float_to_bit(float *src, unsigned char *dst, size_t size);
-
 void forward_maxpool_layer_avx(float *src, float *dst, int *indexes, int size, int w, int h, int out_w, int out_h, int c,
     int pad, int stride, int batch);
 

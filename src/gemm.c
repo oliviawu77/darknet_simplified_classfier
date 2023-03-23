@@ -83,36 +83,6 @@ void gemm_nn(int M, int N, int K, float ALPHA,
     }
 }
 
-void float_to_bit(float *src, unsigned char *dst, size_t size)
-{
-    size_t dst_size = size / 8 + 1;
-    memset(dst, 0, dst_size);
-
-    size_t i;
-    char* byte_arr = (char*)xcalloc(size, sizeof(char));
-    for (i = 0; i < size; ++i) {
-        if (src[i] > 0) byte_arr[i] = 1;
-    }
-
-    //for (i = 0; i < size; ++i) {
-    //    dst[i / 8] |= byte_arr[i] << (i % 8);
-    //}
-
-    for (i = 0; i < size; i += 8) {
-        char dst_tmp = 0;
-        dst_tmp |= byte_arr[i + 0] << 0;
-        dst_tmp |= byte_arr[i + 1] << 1;
-        dst_tmp |= byte_arr[i + 2] << 2;
-        dst_tmp |= byte_arr[i + 3] << 3;
-        dst_tmp |= byte_arr[i + 4] << 4;
-        dst_tmp |= byte_arr[i + 5] << 5;
-        dst_tmp |= byte_arr[i + 6] << 6;
-        dst_tmp |= byte_arr[i + 7] << 7;
-        dst[i / 8] = dst_tmp;
-    }
-    free(byte_arr);
-}
-
 void forward_maxpool_layer_avx(float *src, float *dst, int *indexes, int size, int w, int h, int out_w, int out_h, int c,
     int pad, int stride, int batch)
 {

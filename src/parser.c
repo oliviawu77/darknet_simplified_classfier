@@ -480,34 +480,7 @@ network parse_network_cfg_custom(char *filename, int batch, int time_steps)
             fprintf(stderr, "Type not recognized: %s\n", s->type);
         }
 
-        // calculate receptive field
-        if(show_receptive_field)
-        {
-            int dilation = max_val_cmp(1, l.dilation);
-            int stride = max_val_cmp(1, l.stride);
-            int size = max_val_cmp(1, l.size);
-
-            int increase_receptive = size + (dilation - 1) * 2 - 1;// stride;
-            increase_receptive = max_val_cmp(0, increase_receptive);
-
-            receptive_w += increase_receptive * receptive_w_scale;
-            receptive_h += increase_receptive * receptive_h_scale;
-            receptive_w_scale *= stride;
-            receptive_h_scale *= stride;
-
-            l.receptive_w = receptive_w;
-            l.receptive_h = receptive_h;
-            l.receptive_w_scale = receptive_w_scale;
-            l.receptive_h_scale = receptive_h_scale;
-        
-            //printf(" size = %d, dilation = %d, stride = %d, receptive_w = %d, receptive_w_scale = %d - ", size, dilation, stride, receptive_w, receptive_w_scale);
-
-            int cur_receptive_w = receptive_w;
-            int cur_receptive_h = receptive_h;
-
-            fprintf(stderr, "%4d - receptive field: %d x %d \n", count, cur_receptive_w, cur_receptive_h);
-        }
-
+        // remove calculate receptive field
 
         l.clip = option_find_float_quiet(options, "clip", 0);
         l.dynamic_minibatch = net.dynamic_minibatch;
